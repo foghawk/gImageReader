@@ -233,8 +233,10 @@ OutputEditorHOCR::OutputEditorHOCR(DisplayerToolHOCR* tool) {
 	ui.comboBoxNavigate->addItem(_("Word"), "ocrx_word");
 	ui.comboBoxNavigate->addItem(_("Misspelled word"), "ocrx_word_bad");
 
-	QShortcut* shortcut = new QShortcut(QKeySequence(Qt::Key_Delete), m_widget);
-	QObject::connect(shortcut, SIGNAL(activated()), this, SLOT(removeItem()));
+	QShortcut* del = new QShortcut(QKeySequence(Qt::Key_Delete), m_widget);
+	QObject::connect(del, SIGNAL(activated()), this, SLOT(removeItem()));
+	QShortcut* edit = new QShortcut(QKeySequence(Qt::Key_Return), m_widget);
+	QObject::connect(edit, SIGNAL(activated()), this, SLOT(editItem()));
 
 	connect(ui.actionOutputOpen, SIGNAL(triggered()), this, SLOT(open()));
 	connect(ui.actionOutputSaveHOCR, SIGNAL(triggered()), this, SLOT(save()));
@@ -1007,6 +1009,13 @@ void OutputEditorHOCR::applySubstitutions(const QMap<QString, QString>& substitu
 
 void OutputEditorHOCR::removeItem() {
 	m_document->removeItem(ui.treeViewHOCR->selectionModel()->currentIndex());
+}
+
+void OutputEditorHOCR::editItem() {
+	QModelIndex index = ui.treeViewHOCR->selectionModel()->currentIndex();
+	if(index.isValid() && m_document->itemAtIndex(index)->itemClass() == "ocrx_word") {
+		ui.treeViewHOCR->edit(index);
+	}
 }
 
 void OutputEditorHOCR::updatePreview() {

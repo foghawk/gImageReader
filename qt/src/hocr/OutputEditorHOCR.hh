@@ -57,6 +57,7 @@ public slots:
 	bool exportToODT();
 	bool exportToPDF();
 	bool exportToText();
+	void editItem();
 	void removeItem();
 
 private:
