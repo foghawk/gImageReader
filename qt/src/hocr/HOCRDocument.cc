@@ -229,13 +229,16 @@ QModelIndex HOCRDocument::addItem(const QModelIndex& parent, const QDomElement& 
 bool HOCRDocument::removeItem(const QModelIndex& index) {
 	HOCRItem* item = mutableItemAtIndex(index);
 	if(!item) {
+		qDebug("Item index for removeItem was invalid");
 		return false;
 	}
 	HOCRItem* parentItem = item->parent();
 	beginRemoveRows(index.parent(), index.row(), index.row());
 	deleteItem(item);
 	endRemoveRows();
+	qDebug("Deleted item; recomputing parent bbox...");
 	recomputeBBoxes(parentItem);
+	qDebug("Removed item");
 	return true;
 }
 
@@ -541,6 +544,7 @@ void HOCRDocument::deleteItem(HOCRItem* item) {
 }
 
 void HOCRDocument::takeItem(HOCRItem* item) {
+	qDebug("Taking item...");
 	if(item->parent()) {
 		item->parent()->takeChild(item);
 	} else if(HOCRPage* page = dynamic_cast<HOCRPage*>(item)) {
@@ -660,7 +664,9 @@ void HOCRItem::takeChild(HOCRItem* child) {
 	if(this != child->parent()) {
 		return;
 	}
+	qDebug("Taking child...");
 	int i = child->index();
+	qDebug("Got child index");
 	m_childItems.remove(i);
 	for(int n = m_childItems.size(); i < n; ++i) {
 		m_childItems[i]->m_index = i;

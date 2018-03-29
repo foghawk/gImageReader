@@ -609,11 +609,13 @@ void OutputEditorHOCR::showTreeWidgetContextMenu(const QPoint& point) {
 		QSet<QString> classes;
 		classes.insert(firstItem->itemClass());
 		QVector<int> rows = {indices.first().row()};
+		bool siblings = true;
 		for(int i = 1; i < nIndices; ++i) {
 			const HOCRItem* item = m_document->itemAtIndex(indices[i]);
-			if(!item || item->parent() != firstItem->parent()) {
+			if(!item) {
 				return;
 			}
+			siblings &= (item->parent() == firstItem->parent());
 			classes.insert(item->itemClass());
 			rows.append(indices[i].row());
 		}
@@ -628,15 +630,17 @@ void OutputEditorHOCR::showTreeWidgetContextMenu(const QPoint& point) {
 		QAction* mergeAction = nullptr;
 		QAction* splitAction = nullptr;
 		QAction* swapAction = nullptr;
-		if(consecutive && !graphics && !pages && sameClass) { // Merging allowed
+		QAction* removeAction = nullptr;
+		if(siblings && consecutive && !graphics && !pages && sameClass) { // Merging allowed
 			mergeAction = menu.addAction(_("Merge"));
 			if(firstItem->itemClass() != "ocr_carea") {
 				splitAction = menu.addAction(_("Split"));
 			}
 		}
-		if(nIndices == 2) { // Swapping allowed
+		if(siblings && nIndices == 2) { // Swapping allowed
 			swapAction = menu.addAction(_("Swap"));
 		}
+		removeAction = menu.addAction(_("Remove"));
 
 		QAction* clickedAction = menu.exec(ui.treeViewHOCR->mapToGlobal(point));
 		if(!clickedAction) {
@@ -650,6 +654,13 @@ void OutputEditorHOCR::showTreeWidgetContextMenu(const QPoint& point) {
 			newIndex = m_document->splitItem(indices.first().parent(), rows.first(), rows.last());
 		} else if(clickedAction == swapAction) {
 			newIndex = m_document->swapItems(indices.first().parent(), rows.first(), rows.last());
+		} else if(clickedAction == removeAction) {
+			for(QModelIndex& index : indices) {
+				qDebug("Removing an index...");
+				m_document->removeItem(index);
+			}
+			qDebug("Finished multiple remove");
+			ui.treeViewHOCR->selectionModel()->clearSelection();
 		}
 		if(newIndex.isValid()) {
 			ui.treeViewHOCR->selectionModel()->setCurrentIndex(newIndex,
@@ -658,6 +669,7 @@ void OutputEditorHOCR::showTreeWidgetContextMenu(const QPoint& point) {
 		}
 		ui.treeViewHOCR->selectionModel()->blockSignals(false);
 		// Nothing else is allowed with multiple items selected
+		qDebug("Returning from showWidgetTreeContextMenu");
 		return;
 	}
 	QModelIndex index = ui.treeViewHOCR->indexAt(point);
